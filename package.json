@@ -6,5 +6,9 @@
         "mongoose": "4.3.6",
         "body-parser": "~1.0.1",
         "twilio": "~2.8.0"
-    }
+    },
+    "engines" : {
+    "node" : "5.2.0",
+    "npm" : "3.3.12"
+  }
 }

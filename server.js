@@ -1,11 +1,5 @@
-// server.js
-
-// BASE SETUP
-// =============================================================================
-
-// call the packages we need
-var express = require('express');        // call express
-var app = express();                 // define our app using express
+var express = require('express');
+var app = express();
 var bodyParser = require('body-parser');
 var mongoose = require('./mongoose_connect.js');
 

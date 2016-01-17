@@ -1,9 +1,16 @@
 require('mongoose');
-var twilio_creds = require('../../twilio_credential.js');
-var twilio = require('twilio')(twilio_creds.twilio_sid, twilio_creds.twilio_auth_token);
+if(typeof process.env.TWILIO_SID !== 'undefined')
+    var twilio = require('twilio')(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN); //production
+else{
+    //development; credentials are kept locally.
+    var twilio_creds = require('../../twilio_credential.js');
+    var twilio = require('twilio')(twilio_creds.twilio_sid, twilio_creds.twilio_auth_token);
+}
+
 var Emergency = require('../models/emergency.js');
 var User = require('../models/user.js');
 var Contact = require('../models/contact.js');
+
 module.exports = function(router)
 {
     router.route('/emergencies')
@@ -18,8 +25,10 @@ module.exports = function(router)
             emergency.user = user;
             console.log(user);
         });
+
         var contactString = "";
-        var contactArray = Contact.find({_user_id : emergency._user_id}, function(err, contacts){
+
+        Contact.find({_user_id : emergency._user_id}, function(err, contacts){
             if (!err){
                 contacts.forEach(function(contact){
                     contactString += contact.name; 
@@ -30,7 +39,8 @@ module.exports = function(router)
             else
                 console.log(err);
         });
-        
+        var fromNumber = process.env.TWILIO_DEMO_PHONE_NUMBER || twilio_creds.twilio_phone_number;
+
         emergency.save(function(err) {
             if (err)
                 res.send(err);
@@ -39,7 +49,7 @@ module.exports = function(router)
             numbers.forEach(function(number){
                 twilio.sendMessage({
                 to: '+' + number,
-                from: twilio_creds.twilio_phone_number,
+                from: fromNumber,
                 body: emergency.user.name + ' is demoing the 911 button.  They have dialed 911. The contacts we would have messaged are ' + contactString + '.'
             }, 
             function (err, responseData){

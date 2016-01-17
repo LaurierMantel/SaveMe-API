@@ -15,55 +15,66 @@ module.exports = function(router)
 {
     router.route('/emergencies')
 
-    .post(function(req, res) {
+    .post(function(req, res, next) {
         
         var emergency = new Emergency();
         emergency.location = req.body.location;
         emergency.call_date = new Date();
         emergency._user_id = req.body.user_id;
-        User.findById(emergency._user_id, function(err, user){
-            emergency.user = user;
-            console.log(user);
-        });
+        var queryUser = null;
+        User.findById(emergency._user_id).exec()
+        .then(function(user){
+            queryUser = user;
+            return queryUser;
+        })
+        .then(function(queryUser){
+            if (queryUser !== null && queryUser !== undefined){
 
-        var contactString = "";
+                var contactString = "";
 
-        Contact.find({_user_id : emergency._user_id}, function(err, contacts){
-            if (!err){
-                contacts.forEach(function(contact){
-                    contactString += contact.name; 
-                    if (contact != contacts[contacts.length - 1])
-                        contactString += ', ';
+                Contact.find({_user_id : emergency._user_id}, function(err, contacts){
+                    if (!err){
+                        contacts.forEach(function(contact){
+                            contactString += contact.name; 
+                            if (contact != contacts[contacts.length - 1])
+                                contactString += ', ';
+                        });
+                    }
+                    else
+                        console.log(err);
+                });
+                var fromNumber = process.env.TWILIO_DEMO_PHONE_NUMBER || twilio_creds.twilio_phone_number;
+
+                emergency.save(function(err) {
+                    if (err)
+                        res.send(err);
+                    //set up for demo
+                    var numbers = ['12892301213', '16475308266'];
+                    numbers.forEach(function(number){
+                        twilio.sendMessage({
+                        to: '+' + number,
+                        from: fromNumber,
+                        body: queryUser.name + ' is demoing the 911 button.  They have dialed 911. The contacts we would have messaged are ' + contactString + '.'
+                    }, 
+                    function (err, responseData){
+                        if(!err){
+                            console.log("Message successful");
+                        }
+                        else{
+                            console.log(err);
+                        }
+                    });
+                });
+                    
+                    res.json({ message: 'Emergency created!', emergency: emergency });
                 });
             }
-            else
-                console.log(err);
+            else{
+                res.json({response: "that user is null"});
+            }
         });
-        var fromNumber = process.env.TWILIO_DEMO_PHONE_NUMBER || twilio_creds.twilio_phone_number;
 
-        emergency.save(function(err) {
-            if (err)
-                res.send(err);
-            //set up for demo
-            var numbers = ['12892301213', '16475308266'];
-            numbers.forEach(function(number){
-                twilio.sendMessage({
-                to: '+' + number,
-                from: fromNumber,
-                body: emergency.user.name + ' is demoing the 911 button.  They have dialed 911. The contacts we would have messaged are ' + contactString + '.'
-            }, 
-            function (err, responseData){
-                if(!err){
-                    console.log("Message successful");
-                }
-                else{
-                    console.log(err);
-                }
-            });
-        });
-            
-            res.json({ message: 'Emergency created!', emergency: emergency });
-        });
+        
     })
 
     .get(function(req, res) {

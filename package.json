@@ -1,6 +1,9 @@
 {
     "name": "saveme-api",
     "main": "server.js",
+    "scripts": {
+    	"start": "node server.js"
+    },
     "dependencies": {
         "express": "~4.13.1",
         "mongoose": "4.3.6",

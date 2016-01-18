@@ -21,15 +21,15 @@ module.exports = function(router)
         emergency.location = req.body.location;
         emergency.call_date = new Date();
         emergency._user_id = req.body.user_id;
-        var queryUser = null;
+        console.log("emergency : " + emergency);
         User.findById(emergency._user_id).exec()
         .then(function(user){
-            queryUser = user;
-            return queryUser;
+            console.log("user : " + user);
+            return user;
         })
         .then(function(queryUser){
             if (queryUser !== null && queryUser !== undefined){
-
+                console.log("queryUser: " + queryUser)
                 var contactString = "";
 
                 Contact.find({_user_id : emergency._user_id}, function(err, contacts){
